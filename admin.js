@@ -3,6 +3,7 @@ const SUPABASE_URL = 'https://tufxxzglvjqiusbadlkm.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1Znh4emdsdmpxaXVzYmFkbGttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2ODIyNTIsImV4cCI6MjA3NzI1ODI1Mn0.TJivyjtf79uEP2UL0XeVIso-ttpWGq4SE4UGraME4Lw';
 
 // ==================== GLOBAL VARIABLES ====================
+let adminAuthenticated = false;
 let currentAdminPage = 'dashboard';
 let websiteSettings = null;
 let categories = [];
@@ -16,7 +17,129 @@ let currentFilter = 'all';
 let uploadedFiles = {};
 
 // ==================== INITIALIZATION ====================
+document.addEventListener('DOMContentLoaded', async () => {
+    showAdminLoading();
+    await checkAdminAuth();
+});
 
+function showAdminLoading() {
+    const loadingScreen = document.getElementById('adminLoadingScreen');
+    if (loadingScreen) {
+        loadingScreen.classList.remove('hidden');
+    }
+}
+
+function hideAdminLoading() {
+    const loadingScreen = document.getElementById('adminLoadingScreen');
+    if (loadingScreen) {
+        setTimeout(() => {
+            loadingScreen.classList.add('hidden');
+        }, 500);
+    }
+}
+
+// ==================== ADMIN AUTHENTICATION ====================
+async function checkAdminAuth() {
+    const savedAuth = localStorage.getItem('adminAuth');
+    
+    if (savedAuth) {
+        const authData = JSON.parse(savedAuth);
+        const currentIP = await getCurrentIP();
+        
+        if (authData.ip === currentIP) {
+            adminAuthenticated = true;
+            await initializeAdminDashboard();
+            return;
+        }
+    }
+    
+    hideAdminLoading();
+    showAdminLogin();
+}
+
+async function getCurrentIP() {
+    try {
+        const response = await fetch('https://api.ipify.org?format=json');
+        const data = await response.json();
+        return data.ip;
+    } catch (error) {
+        console.error('Error getting IP:', error);
+        return 'unknown';
+    }
+}
+
+function showAdminLogin() {
+    const loginModal = document.getElementById('adminLoginModal');
+    if (loginModal) {
+        loginModal.style.display = 'flex';
+    }
+}
+
+function hideAdminLogin() {
+    const loginModal = document.getElementById('adminLoginModal');
+    if (loginModal) {
+        loginModal.style.display = 'none';
+    }
+}
+
+async function handleAdminLogin() {
+    const password = document.getElementById('adminPassword').value;
+    
+    if (!password) {
+        showAdminToast('Please enter password', 'error');
+        return;
+    }
+    
+    showAdminLoading();
+    
+    try {
+        // Get admin credentials from database
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/admin_settings?select=password,allowed_ip`, {
+            headers: {
+                'apikey': SUPABASE_ANON_KEY,
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+            }
+        });
+        
+        const settings = await response.json();
+        
+        if (settings && settings.length > 0) {
+            const adminSettings = settings[0];
+            const currentIP = await getCurrentIP();
+            
+            if (adminSettings.password === password && adminSettings.allowed_ip === currentIP) {
+                adminAuthenticated = true;
+                
+                // Save auth
+                localStorage.setItem('adminAuth', JSON.stringify({
+                    ip: currentIP,
+                    timestamp: Date.now()
+                }));
+                
+                hideAdminLogin();
+                await initializeAdminDashboard();
+                showAdminToast('Login successful', 'success');
+            } else {
+                showAdminToast('Invalid credentials or unauthorized IP', 'error');
+            }
+        } else {
+            showAdminToast('Admin settings not found', 'error');
+        }
+        
+    } catch (error) {
+        console.error('Login error:', error);
+        showAdminToast('Login failed', 'error');
+    } finally {
+        hideAdminLoading();
+    }
+}
+
+function adminLogout() {
+    if (confirm('Are you sure you want to logout?')) {
+        localStorage.removeItem('adminAuth');
+        location.reload();
+    }
+}
 
 // ==================== INITIALIZE DASHBOARD ====================
 async function initializeAdminDashboard() {
