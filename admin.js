@@ -3,7 +3,6 @@ const SUPABASE_URL = 'https://tufxxzglvjqiusbadlkm.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1Znh4emdsdmpxaXVzYmFkbGttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2ODIyNTIsImV4cCI6MjA3NzI1ODI1Mn0.TJivyjtf79uEP2UL0XeVIso-ttpWGq4SE4UGraME4Lw';
 
 // ==================== GLOBAL VARIABLES ====================
-let adminAuthenticated = false;
 let currentAdminPage = 'dashboard';
 let websiteSettings = null;
 let categories = [];
