@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="admin.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="adminLoadingScreen" class="loading-screen">
+        <div class="loading-content">
+            <div class="loading-animation"></div>
+            <p style="margin-top: 20px; color: white;">Loading Admin Panel...</p>
+        </div>
+    </div>
+
+    <!-- Admin Login -->
+    <div id="adminLoginModal" class="admin-login-modal">
+        <div class="admin-login-card">
+            <h1>Admin Panel</h1>
+            <p class="admin-login-subtitle">Secure Access Only</p>
+            
+            <div class="input-group">
+                <input type="password" id="adminPassword" placeholder="Enter Admin Password" autocomplete="off">
+            </div>
+            
+            <button class="btn-primary" onclick="handleAdminLogin()">Access Dashboard</button>
+            
+            <p class="admin-warning">⚠️ IP-based authentication enabled</p>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div id="adminDashboard" class="admin-dashboard hidden">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <div class="admin-logo">
+                <h2>⚡ Admin</h2>
+            </div>
+            
+            <nav class="admin-nav">
+                <button class="admin-nav-item active" onclick="adminNavigateTo('dashboard')">
+                    <span class="nav-icon">📊</span>
+                    <span>Dashboard</span>
+                </button>
+                <button class="admin-nav-item" onclick="adminNavigateTo('settings')">
+                    <span class="nav-icon">⚙️</span>
+                    <span>Website Settings</span>
+                </button>
+                <button class="admin-nav-item" onclick="adminNavigateTo('categories')">
+                    <span class="nav-icon">📁</span>
+                    <span>Categories</span>
+                </button>
+                <button class="admin-nav-item" onclick="adminNavigateTo('products')">
+                    <span class="nav-icon">🛍️</span>
+                    <span>Products</span>
+                </button>
+                <button class="admin-nav-item" onclick="adminNavigateTo('payment')">
+                    <span class="nav-icon">💳</span>
+                    <span>Payment Methods</span>
+                </button>
+                <button class="admin-nav-item" onclick="adminNavigateTo('banners')">
+                    <span class="nav-icon">🖼️</span>
+                    <span>Banners</span>
+                </button>
+                <button class="admin-nav-item" onclick="adminNavigateTo('news')">
+                    <span class="nav-icon">📰</span>
+                    <span>News</span>
+                </button>
+                <button class="admin-nav-item" onclick="adminNavigateTo('contacts')">
+                    <span class="nav-icon">📞</span>
+                    <span>Contacts</span>
+                </button>
+                <button class="admin-nav-item" onclick="adminNavigateTo('orders')">
+                    <span class="nav-icon">📦</span>
+                    <span>Orders</span>
+                </button>
+                <button class="admin-nav-item" onclick="adminNavigateTo('users')">
+                    <span class="nav-icon">👥</span>
+                    <span>Users</span>
+                </button>
+                <button class="admin-nav-item" onclick="adminNavigateTo('coupons')">
+                    <span class="nav-icon">🎟️</span>
+                    <span>Coupons</span>
+                </button>
+                <button class="admin-nav-item" onclick="adminNavigateTo('music')">
+                    <span class="nav-icon">🎵</span>
+                    <span>Music</span>
+                </button>
+                <button class="admin-nav-item" onclick="adminLogout()">
+                    <span class="nav-icon">🚪</span>
+                    <span>Logout</span>
+                </button>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <!-- Top Bar -->
+            <header class="admin-topbar">
+                <h1 id="adminPageTitle">Dashboard</h1>
+                <div class="admin-user-info">
+                    <span>Admin</span>
+                </div>
+            </header>
+
+            <!-- Content Area -->
+            <div class="admin-content">
+                <!-- Dashboard Page -->
+                <div id="adminPageDashboard" class="admin-page active">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">👥</div>
+                            <div class="stat-info">
+                                <h3 id="statTotalUsers">0</h3>
+                                <p>Total Users</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">📦</div>
+                            <div class="stat-info">
+                                <h3 id="statTotalOrders">0</h3>
+                                <p>Total Orders</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">💰</div>
+                            <div class="stat-info">
+                                <h3 id="statTotalRevenue">0</h3>
+                                <p>Total Revenue (Ks)</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">⏳</div>
+                            <div class="stat-info">
+                                <h3 id="statPendingOrders">0</h3>
+                                <p>Pending Orders</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="charts-section">
+                        <div class="chart-card">
+                            <h3>Recent Orders</h3>
+                            <div id="recentOrdersList"></div>
+                        </div>
+                        <div class="chart-card">
+                            <h3>Top Products</h3>
+                            <div id="topProductsList"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Website Settings Page -->
+                <div id="adminPageSettings" class="admin-page">
+                    <div class="settings-section">
+                        <h2>Website Settings</h2>
+                        
+                        <div class="form-group">
+                            <label>Website Logo (981x363)</label>
+                            <input type="file" id="settingsLogo" accept="image/*">
+                            <div id="logoPreview" class="image-preview"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Website Name</label>
+                            <input type="text" id="settingsName" placeholder="Enter website name">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Website Background (Image/Video)</label>
+                            <input type="file" id="settingsBackground" accept="image/*,video/*">
+                            <div id="backgroundPreview" class="image-preview"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Button Background Style</label>
+                            <input type="file" id="settingsButtonBg" accept="image/*">
+                            <div id="buttonBgPreview" class="image-preview"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Loading Animation (GIF/PNG/JSON)</label>
+                            <input type="file" id="settingsLoading" accept="image/*,.json">
+                            <div id="loadingPreview" class="image-preview"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Success Loading Animation</label>
+                            <input type="file" id="settingsSuccessLoading" accept="image/*,.json">
+                            <div id="successLoadingPreview" class="image-preview"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>WebApp Download URL</label>
+                            <input type="text" id="settingsWebAppUrl" placeholder="https://...">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Website Version</label>
+                            <input type="text" id="settingsVersion" placeholder="1.0.0">
+                        </div>
+
+                        <button class="btn-primary" onclick="saveWebsiteSettings()">Save Settings</button>
+                    </div>
+                </div>
+
+                <!-- Categories Page -->
+                <div id="adminPageCategories" class="admin-page">
+                    <div class="page-header">
+                        <h2>Categories Management</h2>
+                        <button class="btn-primary" onclick="showCreateCategoryModal()">+ Add Category</button>
+                    </div>
+
+                    <div class="categories-tabs">
+                        <button class="tab-btn active" onclick="switchCategoryTab('categories')">Categories</button>
+                        <button class="tab-btn" onclick="switchCategoryTab('cards')">Category Cards</button>
+                    </div>
+
+                    <!-- Categories List -->
+                    <div id="categoriesListTab" class="tab-content active">
+                        <div id="categoriesList" class="data-list"></div>
+                    </div>
+
+                    <!-- Category Cards List -->
+                    <div id="categoryCardsTab" class="tab-content">
+                        <div class="form-group">
+                            <label>Select Category</label>
+                            <select id="cardCategoryFilter" onchange="filterCategoryCards()">
+                                <option value="">All Categories</option>
+                            </select>
+                        </div>
+                        <button class="btn-primary" onclick="showCreateCategoryCardModal()">+ Add Category Card</button>
+                        <div id="categoryCardsList" class="data-list"></div>
+                    </div>
+                </div>
+
+                <!-- Products Page -->
+                <div id="adminPageProducts" class="admin-page">
+                    <div class="page-header">
+                        <h2>Products Management</h2>
+                        <button class="btn-primary" onclick="showCreateProductModal()">+ Add Product</button>
+                    </div>
+
+                    <div class="products-tabs">
+                        <button class="tab-btn active" onclick="switchProductTab('products')">Products</button>
+                        <button class="tab-btn" onclick="switchProductTab('inputTables')">Input Tables</button>
+                        <button class="tab-btn" onclick="switchProductTab('productBanners')">Product Banners</button>
+                        <button class="tab-btn" onclick="switchProductTab('guidelines')">Guidelines</button>
+                        <button class="tab-btn" onclick="switchProductTab('videos')">YouTube Videos</button>
+                        <button class="tab-btn" onclick="switchProductTab('backgrounds')">Page Backgrounds</button>
+                    </div>
+
+                    <div id="productsListTab" class="tab-content active">
+                        <div id="productsList" class="data-list"></div>
+                    </div>
+
+                    <div id="inputTablesTab" class="tab-content">
+                        <button class="btn-primary" onclick="showCreateInputTableModal()">+ Add Input Table</button>
+                        <div id="inputTablesList" class="data-list"></div>
+                    </div>
+
+                    <div id="productBannersTab" class="tab-content">
+                        <button class="btn-primary" onclick="showCreateProductBannerModal()">+ Add Product Banner</button>
+                        <div id="productBannersList" class="data-list"></div>
+                    </div>
+
+                    <div id="guidelinesTab" class="tab-content">
+                        <button class="btn-primary" onclick="showCreateGuidelineModal()">+ Add Guideline</button>
+                        <div id="guidelinesList" class="data-list"></div>
+                    </div>
+
+                    <div id="videosTab" class="tab-content">
+                        <button class="btn-primary" onclick="showCreateVideoModal()">+ Add YouTube Video</button>
+                        <div id="videosList" class="data-list"></div>
+                    </div>
+
+                    <div id="backgroundsTab" class="tab-content">
+                        <button class="btn-primary" onclick="showCreatePageBackgroundModal()">+ Add Page Background</button>
+                        <div id="pageBackgroundsList" class="data-list"></div>
+                    </div>
+                </div>
+
+                <!-- Payment Methods Page -->
+                <div id="adminPagePayment" class="admin-page">
+                    <div class="page-header">
+                        <h2>Payment Methods</h2>
+                        <button class="btn-primary" onclick="showCreatePaymentMethodModal()">+ Add Payment Method</button>
+                    </div>
+                    <div id="paymentMethodsList" class="data-list"></div>
+                </div>
+
+                <!-- Banners Page -->
+                <div id="adminPageBanners" class="admin-page">
+                    <div class="page-header">
+                        <h2>Banners Management</h2>
+                    </div>
+
+                    <div class="banners-tabs">
+                        <button class="tab-btn active" onclick="switchBannerTab('main')">Main Banners (1280x720)</button>
+                        <button class="tab-btn" onclick="switchBannerTab('link')">Link Banners (1280x180)</button>
+                    </div>
+
+                    <div id="mainBannersTab" class="tab-content active">
+                        <button class="btn-primary" onclick="showCreateMainBannerModal()">+ Add Main Banner</button>
+                        <div id="mainBannersList" class="data-list"></div>
+                    </div>
+
+                    <div id="linkBannersTab" class="tab-content">
+                        <button class="btn-primary" onclick="showCreateLinkBannerModal()">+ Add Link Banner</button>
+                        <div id="linkBannersList" class="data-list"></div>
+                    </div>
+                </div>
+
+                <!-- News Page -->
+                <div id="adminPageNews" class="admin-page">
+                    <div class="page-header">
+                        <h2>News Management</h2>
+                        <button class="btn-primary" onclick="showCreateNewsModal()">+ Add News</button>
+                    </div>
+                    <div id="newsList" class="data-list"></div>
+                </div>
+
+                <!-- Contacts Page -->
+                <div id="adminPageContacts" class="admin-page">
+                    <div class="page-header">
+                        <h2>Contacts Management</h2>
+                        <button class="btn-primary" onclick="showCreateContactModal()">+ Add Contact</button>
+                    </div>
+                    <div id="contactsList" class="data-list"></div>
+                </div>
+
+                <!-- Orders Page -->
+                <div id="adminPageOrders" class="admin-page">
+                    <div class="page-header">
+                        <h2>Orders Management</h2>
+                    </div>
+
+                    <div class="orders-filter">
+                        <button class="filter-btn active" onclick="filterOrders('all')">All</button>
+                        <button class="filter-btn" onclick="filterOrders('pending')">Pending</button>
+                        <button class="filter-btn" onclick="filterOrders('approved')">Approved</button>
+                        <button class="filter-btn" onclick="filterOrders('rejected')">Rejected</button>
+                    </div>
+
+                    <div id="ordersList" class="data-list"></div>
+                </div>
+
+                <!-- Users Page -->
+                <div id="adminPageUsers" class="admin-page">
+                    <div class="page-header">
+                        <h2>Users Management</h2>
+                    </div>
+                    <div id="usersList" class="data-list"></div>
+                </div>
+
+                <!-- Coupons Page -->
+                <div id="adminPageCoupons" class="admin-page">
+                    <div class="page-header">
+                        <h2>Coupons Management</h2>
+                        <button class="btn-primary" onclick="showCreateCouponModal()">+ Generate Coupon</button>
+                    </div>
+                    <div id="couponsList" class="data-list"></div>
+                </div>
+
+                <!-- Music Page -->
+                <div id="adminPageMusic" class="admin-page">
+                    <div class="page-header">
+                        <h2>Music Playlist</h2>
+                        <button class="btn-primary" onclick="showAddMusicModal()">+ Add Music</button>
+                    </div>
+                    <div id="musicList" class="data-list"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Container -->
+    <div id="modalContainer"></div>
+
+    <script src="admin.js"></script>
+</body>
+</html>
