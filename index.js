@@ -1,6 +1,6 @@
 // ==================== SUPABASE CONFIGURATION ====================
-const SUPABASE_URL = 'https://tufxxzglvjqiusbadlkm.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1Znh4emdsdmpxaXVzYmFkbGttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2ODIyNTIsImV4cCI6MjA3NzI1ODI1Mn0.TJivyjtf79uEP2UL0XeVIso-ttpWGq4SE4UGraME4Lw';
+const SUPABASE_URL = 'https://lbcmpfqlwooajiycywwv.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxiY21wZnFsd29vYWppeWN5d3d2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE4MjA5OTMsImV4cCI6MjA3NzM5Njk5M30.Vu66wK_H-Tkb3m9g1Z6U4g1jjA2F79i1b1tzqAw8CAQ';
 
 // ==================== GLOBAL VARIABLES ====================
 let currentUser = null;
