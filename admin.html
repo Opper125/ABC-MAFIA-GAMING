@@ -18,6 +18,22 @@
         </div>
     </div>
 
+    <!-- Admin Login -->
+    <div id="adminLoginModal" class="admin-login-modal">
+        <div class="admin-login-card">
+            <h1>Admin Panel</h1>
+            <p class="admin-login-subtitle">Secure Access Only</p>
+            
+            <div class="input-group">
+                <input type="password" id="adminPassword" placeholder="Enter Admin Password" autocomplete="off">
+            </div>
+            
+            <button class="btn-primary" onclick="handleAdminLogin()">Access Dashboard</button>
+            
+            <p class="admin-warning">⚠️ IP-based authentication enabled</p>
+        </div>
+    </div>
+
     <!-- Admin Dashboard -->
     <div id="adminDashboard" class="admin-dashboard hidden">
         <!-- Sidebar -->
@@ -366,8 +382,6 @@
     <!-- Modal Container -->
     <div id="modalContainer"></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
     <script src="admin.js"></script>
 </body>
 </html>
