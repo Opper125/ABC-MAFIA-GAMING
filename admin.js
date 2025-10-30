@@ -39,114 +39,104 @@ function hideAdminLoading() {
 }
 
 // ==================== ADMIN AUTHENTICATION ====================
-// ==================== ADMIN AUTHENTICATION ====================
 async function checkAdminAuth() {
-    try {
-        const savedAuth = localStorage.getItem('adminAuthenticated');
-        const savedIP = localStorage.getItem('adminIP');
-        
-        if (savedAuth === 'true' && savedIP) {
-            // Verify with database
-            const { data: adminSettings, error } = await supabase
-                .from('admin_settings')
-                .select('*')
-                .limit(1)
-                .single();
-            
-            if (error) throw error;
-            
-            // Check if IP matches or if admin allows all IPs (0.0.0.0)
-            if (adminSettings.allowed_ip === '0.0.0.0' || adminSettings.allowed_ip === savedIP) {
-                adminAuthenticated = true;
-                hideAdminLoading();
-                showAdminDashboard();
-                await loadDashboardData();
-                return;
-            }
-        }
-        
-        // Not authenticated, show login
-        hideAdminLoading();
-        showAdminLogin();
-        
-    } catch (error) {
-        console.error('Auth check error:', error);
-        hideAdminLoading();
-        showAdminLogin();
-    }
-}
-
-async function adminLogin() {
-    const password = document.getElementById('adminPassword').value;
-    const loginBtn = document.querySelector('.admin-login-btn');
-    const errorMsg = document.getElementById('adminLoginError');
+    const savedAuth = localStorage.getItem('adminAuth');
     
-    if (!password) {
-        showError(errorMsg, 'Please enter password');
-        return;
+    if (savedAuth) {
+        const authData = JSON.parse(savedAuth);
+        const currentIP = await getCurrentIP();
+        
+        if (authData.ip === currentIP) {
+            adminAuthenticated = true;
+            await initializeAdminDashboard();
+            return;
+        }
     }
     
-    try {
-        loginBtn.disabled = true;
-        loginBtn.innerHTML = '<span class="spinner"></span> Authenticating...';
-        
-        // Get client IP (you can use a service or just allow all for now)
-        const clientIP = await getClientIP();
-        
-        // Fetch admin settings from database
-        const { data: adminSettings, error } = await supabase
-            .from('admin_settings')
-            .select('*')
-            .limit(1)
-            .single();
-        
-        if (error) throw new Error('Failed to fetch admin settings');
-        
-        // Check password
-        if (password !== adminSettings.password) {
-            throw new Error('Invalid password');
-        }
-        
-        // Check IP whitelist (0.0.0.0 means allow all)
-        if (adminSettings.allowed_ip !== '0.0.0.0' && adminSettings.allowed_ip !== clientIP) {
-            throw new Error('Access denied from your IP address');
-        }
-        
-        // Save auth state
-        localStorage.setItem('adminAuthenticated', 'true');
-        localStorage.setItem('adminIP', clientIP);
-        
-        adminAuthenticated = true;
-        hideAdminLogin();
-        showAdminDashboard();
-        await loadDashboardData();
-        
-    } catch (error) {
-        console.error('Login error:', error);
-        showError(errorMsg, error.message || 'Login failed');
-        loginBtn.disabled = false;
-        loginBtn.textContent = 'Login';
-    }
+    hideAdminLoading();
+    showAdminLogin();
 }
 
-async function getClientIP() {
+async function getCurrentIP() {
     try {
-        // Try to get real IP from ipify API
         const response = await fetch('https://api.ipify.org?format=json');
         const data = await response.json();
         return data.ip;
     } catch (error) {
-        console.error('Failed to get IP:', error);
-        // Fallback: allow access (admin_settings has 0.0.0.0 as default)
-        return '0.0.0.0';
+        console.error('Error getting IP:', error);
+        return 'unknown';
+    }
+}
+
+function showAdminLogin() {
+    const loginModal = document.getElementById('adminLoginModal');
+    if (loginModal) {
+        loginModal.style.display = 'flex';
+    }
+}
+
+function hideAdminLogin() {
+    const loginModal = document.getElementById('adminLoginModal');
+    if (loginModal) {
+        loginModal.style.display = 'none';
+    }
+}
+
+async function handleAdminLogin() {
+    const password = document.getElementById('adminPassword').value;
+    
+    if (!password) {
+        showAdminToast('Please enter password', 'error');
+        return;
+    }
+    
+    showAdminLoading();
+    
+    try {
+        // Get admin credentials from database
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/admin_settings?select=password,allowed_ip`, {
+            headers: {
+                'apikey': SUPABASE_ANON_KEY,
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+            }
+        });
+        
+        const settings = await response.json();
+        
+        if (settings && settings.length > 0) {
+            const adminSettings = settings[0];
+            const currentIP = await getCurrentIP();
+            
+            if (adminSettings.password === password && adminSettings.allowed_ip === currentIP) {
+                adminAuthenticated = true;
+                
+                // Save auth
+                localStorage.setItem('adminAuth', JSON.stringify({
+                    ip: currentIP,
+                    timestamp: Date.now()
+                }));
+                
+                hideAdminLogin();
+                await initializeAdminDashboard();
+                showAdminToast('Login successful', 'success');
+            } else {
+                showAdminToast('Invalid credentials or unauthorized IP', 'error');
+            }
+        } else {
+            showAdminToast('Admin settings not found', 'error');
+        }
+        
+    } catch (error) {
+        console.error('Login error:', error);
+        showAdminToast('Login failed', 'error');
+    } finally {
+        hideAdminLoading();
     }
 }
 
 function adminLogout() {
     if (confirm('Are you sure you want to logout?')) {
-        localStorage.removeItem('adminAuthenticated');
-        localStorage.removeItem('adminIP');
-        adminAuthenticated = false;
+        localStorage.removeItem('adminAuth');
         location.reload();
     }
 }
