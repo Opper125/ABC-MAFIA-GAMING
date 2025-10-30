@@ -151,27 +151,6 @@ function adminLogout() {
     }
 }
 
-function showAdminLogin() {
-    document.getElementById('adminLoginModal').style.display = 'flex';
-}
-
-function hideAdminLogin() {
-    document.getElementById('adminLoginModal').style.display = 'none';
-}
-
-function showAdminDashboard() {
-    document.getElementById('adminDashboard').style.display = 'flex';
-}
-
-function showError(element, message) {
-    element.textContent = message;
-    element.style.display = 'block';
-    setTimeout(() => {
-        element.style.display = 'none';
-    }, 3000);
-}
-
-
 // ==================== INITIALIZE DASHBOARD ====================
 async function initializeAdminDashboard() {
     document.getElementById('adminDashboard').classList.remove('hidden');
