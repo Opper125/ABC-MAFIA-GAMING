@@ -1,6 +1,6 @@
 // ==================== SUPABASE CONFIGURATION ====================
-const SUPABASE_URL = 'https://tufxxzglvjqiusbadlkm.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1Znh4emdsdmpxaXVzYmFkbGttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2ODIyNTIsImV4cCI6MjA3NzI1ODI1Mn0.TJivyjtf79uEP2UL0XeVIso-ttpWGq4SE4UGraME4Lw';
+const SUPABASE_URL = 'https://lbcmpfqlwooajiycywwv.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxiY21wZnFsd29vYWppeWN5d3d2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE4MjA5OTMsImV4cCI6MjA3NzM5Njk5M30.Vu66wK_H-Tkb3m9g1Z6U4g1jjA2F79i1b1tzqAw8CAQ';
 
 // ==================== GLOBAL VARIABLES ====================
 let adminAuthenticated = false;
@@ -39,107 +39,138 @@ function hideAdminLoading() {
 }
 
 // ==================== ADMIN AUTHENTICATION ====================
+// ==================== ADMIN AUTHENTICATION ====================
 async function checkAdminAuth() {
-    const savedAuth = localStorage.getItem('adminAuth');
-    
-    if (savedAuth) {
-        const authData = JSON.parse(savedAuth);
-        const currentIP = await getCurrentIP();
+    try {
+        const savedAuth = localStorage.getItem('adminAuthenticated');
+        const savedIP = localStorage.getItem('adminIP');
         
-        if (authData.ip === currentIP) {
-            adminAuthenticated = true;
-            await initializeAdminDashboard();
-            return;
+        if (savedAuth === 'true' && savedIP) {
+            // Verify with database
+            const { data: adminSettings, error } = await supabase
+                .from('admin_settings')
+                .select('*')
+                .limit(1)
+                .single();
+            
+            if (error) throw error;
+            
+            // Check if IP matches or if admin allows all IPs (0.0.0.0)
+            if (adminSettings.allowed_ip === '0.0.0.0' || adminSettings.allowed_ip === savedIP) {
+                adminAuthenticated = true;
+                hideAdminLoading();
+                showAdminDashboard();
+                await loadDashboardData();
+                return;
+            }
         }
+        
+        // Not authenticated, show login
+        hideAdminLoading();
+        showAdminLogin();
+        
+    } catch (error) {
+        console.error('Auth check error:', error);
+        hideAdminLoading();
+        showAdminLogin();
     }
-    
-    hideAdminLoading();
-    showAdminLogin();
 }
 
-async function getCurrentIP() {
+async function adminLogin() {
+    const password = document.getElementById('adminPassword').value;
+    const loginBtn = document.querySelector('.admin-login-btn');
+    const errorMsg = document.getElementById('adminLoginError');
+    
+    if (!password) {
+        showError(errorMsg, 'Please enter password');
+        return;
+    }
+    
     try {
+        loginBtn.disabled = true;
+        loginBtn.innerHTML = '<span class="spinner"></span> Authenticating...';
+        
+        // Get client IP (you can use a service or just allow all for now)
+        const clientIP = await getClientIP();
+        
+        // Fetch admin settings from database
+        const { data: adminSettings, error } = await supabase
+            .from('admin_settings')
+            .select('*')
+            .limit(1)
+            .single();
+        
+        if (error) throw new Error('Failed to fetch admin settings');
+        
+        // Check password
+        if (password !== adminSettings.password) {
+            throw new Error('Invalid password');
+        }
+        
+        // Check IP whitelist (0.0.0.0 means allow all)
+        if (adminSettings.allowed_ip !== '0.0.0.0' && adminSettings.allowed_ip !== clientIP) {
+            throw new Error('Access denied from your IP address');
+        }
+        
+        // Save auth state
+        localStorage.setItem('adminAuthenticated', 'true');
+        localStorage.setItem('adminIP', clientIP);
+        
+        adminAuthenticated = true;
+        hideAdminLogin();
+        showAdminDashboard();
+        await loadDashboardData();
+        
+    } catch (error) {
+        console.error('Login error:', error);
+        showError(errorMsg, error.message || 'Login failed');
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Login';
+    }
+}
+
+async function getClientIP() {
+    try {
+        // Try to get real IP from ipify API
         const response = await fetch('https://api.ipify.org?format=json');
         const data = await response.json();
         return data.ip;
     } catch (error) {
-        console.error('Error getting IP:', error);
-        return 'unknown';
-    }
-}
-
-function showAdminLogin() {
-    const loginModal = document.getElementById('adminLoginModal');
-    if (loginModal) {
-        loginModal.style.display = 'flex';
-    }
-}
-
-function hideAdminLogin() {
-    const loginModal = document.getElementById('adminLoginModal');
-    if (loginModal) {
-        loginModal.style.display = 'none';
-    }
-}
-
-async function handleAdminLogin() {
-    const password = document.getElementById('adminPassword').value;
-    
-    if (!password) {
-        showAdminToast('Please enter password', 'error');
-        return;
-    }
-    
-    showAdminLoading();
-    
-    try {
-        // Get admin credentials from database
-        const response = await fetch(`${SUPABASE_URL}/rest/v1/admin_settings?select=password,allowed_ip`, {
-            headers: {
-                'apikey': SUPABASE_ANON_KEY,
-                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-            }
-        });
-        
-        const settings = await response.json();
-        
-        if (settings && settings.length > 0) {
-            const adminSettings = settings[0];
-            const currentIP = await getCurrentIP();
-            
-            if (adminSettings.password === password && adminSettings.allowed_ip === currentIP) {
-                adminAuthenticated = true;
-                
-                // Save auth
-                localStorage.setItem('adminAuth', JSON.stringify({
-                    ip: currentIP,
-                    timestamp: Date.now()
-                }));
-                
-                hideAdminLogin();
-                await initializeAdminDashboard();
-                showAdminToast('Login successful', 'success');
-            } else {
-                showAdminToast('Invalid credentials or unauthorized IP', 'error');
-            }
-        } else {
-            showAdminToast('Admin settings not found', 'error');
-        }
-        
-    } catch (error) {
-        console.error('Login error:', error);
-        showAdminToast('Login failed', 'error');
-    } finally {
-        hideAdminLoading();
+        console.error('Failed to get IP:', error);
+        // Fallback: allow access (admin_settings has 0.0.0.0 as default)
+        return '0.0.0.0';
     }
 }
 
 function adminLogout() {
     if (confirm('Are you sure you want to logout?')) {
-        localStorage.removeItem('adminAuth');
+        localStorage.removeItem('adminAuthenticated');
+        localStorage.removeItem('adminIP');
+        adminAuthenticated = false;
         location.reload();
     }
 }
+
+function showAdminLogin() {
+    document.getElementById('adminLoginModal').style.display = 'flex';
+}
+
+function hideAdminLogin() {
+    document.getElementById('adminLoginModal').style.display = 'none';
+}
+
+function showAdminDashboard() {
+    document.getElementById('adminDashboard').style.display = 'flex';
+}
+
+function showError(element, message) {
+    element.textContent = message;
+    element.style.display = 'block';
+    setTimeout(() => {
+        element.style.display = 'none';
+    }, 3000);
+}
+
 
 // ==================== INITIALIZE DASHBOARD ====================
 async function initializeAdminDashboard() {
